@@ -70,7 +70,7 @@ class Translator(BaseTranslator):
         }
 
         try:
-            async with session.post(url, json=data, headers=headers, timeout=1) as res:
+            async with session.post(url, json=data, headers=headers) as res:
                 text = await res.text()
                 result = re.findall(r'"dst":"(.*?)"', text)
         except:
@@ -92,7 +92,7 @@ class Translator(BaseTranslator):
                             if trans:
                                 self.cache.put(string, trans)
 
-                        if trans:
+                        if trans and trans != text_var.get():
                             text_var.set(trans)
 
                 await asyncio.sleep(0.5)
@@ -131,9 +131,10 @@ class AiTranslator(BaseTranslator):
 
                     if not trans:
                         trans = await self.translate_llm(string)
-                        self.cache.put(string, trans)
+                        if trans:
+                            self.cache.put(string, trans)
                             
-                    if trans:
+                    if trans and trans != text_var.get():
                         text_var.set(trans)
 
             await asyncio.sleep(0.5)

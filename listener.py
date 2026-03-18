@@ -15,7 +15,6 @@ class RenpyMemoryListener:
     def __init__(self, process_name: str):
         self.pm = pymem.Pymem(process_name)
         self.store_dict_addr = self.find_say_dict_entry()
-        self.last_what = ""
         self.tag_re = re.compile(r'\{[^}]*\}')
 
     def find_say_dict_entry(self):
@@ -96,8 +95,5 @@ class RenpyMemoryListener:
         what_ptr = self._dict_lookup(self.store_dict_addr, "_last_say_what")
         what = self.read_pyunicode(what_ptr)
         what = self.tag_re.sub('', what)
-        
-        if what and what != self.last_what:
-            self.last_what = what
-            return what
-        return ""
+
+        return what
