@@ -117,7 +117,7 @@ class AiTranslator(BaseTranslator):
                 "temperature": 0
             }
         )
-        return response["message"]["content"].strip()
+        return response.message.content.strip()
 
     async def update(self, text_var: StringVar):
         while self.alive:
