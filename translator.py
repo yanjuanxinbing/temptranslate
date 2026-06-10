@@ -1,9 +1,10 @@
-import re
 import time
 import asyncio
 import aiohttp
+import hashlib
 
 from cache import LRU
+from config import APP_ID, APP_KEY
 from ollama import AsyncClient
 from abc import ABC, abstractmethod
 from customtkinter import StringVar
@@ -43,40 +44,27 @@ class Translator(BaseTranslator):
     def __init__(self):
         super().__init__()
 
-    def get_time(self):
-        return int(time.time() * 1000)
+    def sign(self, raw: str) -> str:
+        return hashlib.md5(raw.encode()).hexdigest()
 
-    async def translate(self, session: aiohttp.ClientSession, query: str):
-        url = "https://fanyi.baidu.com/ait/text/translate"
-
-        data = {
-            "needNewlineCombine": False,
-            "isAi": False,
-            "sseStartTime": self.get_time(),
-            "query": query,
-            "from": "en",
-            "to": "zh",
-            "reference": "",
-            "corpusIds": [],
-            "needPhonetic": True,
-            "domain": "common",
-            "detectLang": "",
-            "isIncognitoAI": False,
-            "milliTimestamp": self.get_time()
-        }
-
-        headers = {
-            "Acs-Token": f"{data['sseStartTime']}_{data['milliTimestamp']}"
+    async def translate(self, session: aiohttp.ClientSession, query: str) -> str:
+        url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
+        salt = str(int(time.time() * 1000))
+        params = {
+            "q":     query,
+            "from":  "en",
+            "to":    "zh",
+            "appid": APP_ID,
+            "salt":  salt,
+            "sign":  self.sign(APP_ID + query + salt + APP_KEY),
         }
 
         try:
-            async with session.post(url, json=data, headers=headers) as res:
-                text = await res.text()
-                result = re.findall(r'"dst":"(.*?)"', text)
+            async with session.get(url, params=params) as res:
+                data = await res.json()
+            return data["trans_result"][0]["dst"]
         except:
             return ""
-
-        return result[0] if result else ""
 
     async def update(self, text_var: StringVar):
         async with aiohttp.ClientSession() as session:
