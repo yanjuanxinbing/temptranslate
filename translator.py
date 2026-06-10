@@ -44,9 +44,6 @@ class Translator(BaseTranslator):
     def __init__(self):
         super().__init__()
 
-    def sign(self, raw: str) -> str:
-        return hashlib.md5(raw.encode()).hexdigest()
-
     async def translate(self, session: aiohttp.ClientSession, query: str) -> str:
         url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
         salt = str(int(time.time() * 1000))
@@ -56,7 +53,7 @@ class Translator(BaseTranslator):
             "to":    "zh",
             "appid": APP_ID,
             "salt":  salt,
-            "sign":  self.sign(APP_ID + query + salt + APP_KEY),
+            "sign":  hashlib.md5((APP_ID + query + salt + APP_KEY).encode()).hexdigest(),
         }
 
         try:
